@@ -5,43 +5,47 @@ title MENU DO SUPORTE TECNICO
 cls
 echo ========= MENU DO SUPORTE TECNICO =========
 echo 0 - Sair
-echo 1 - Rede 
-echo 2 - Impressoras 
-echo 3 - Lentidao (SFC + limpeza)
-echo 4 - Atualizar Group Policy
+echo 1 - Apagar Arquivos Temporarios (Lentidao)
+echo 2 - Limpeza de Disco
+echo 3 - Resolver Problemas de Audio
+echo 4 - Diagnostico de Rede
 echo 5 - Forcar Windows Update
-echo 6 - Processos com maior uso de CPU
-echo 7 - Processos com maior uso de RAM
-echo 8 - Limpeza de Disco
-echo 9 - Resolver Problemas de Audio
+echo 6 - Atualizar GPO
+echo 7 - Processos com maior uso de CPU
+echo 8 - Processos com maior uso de RAM
+echo 9 - Correcao de erros de impressao
+echo 10 - Reparar Microsoft Teams
+echo 11 - Reparar Google Chrome
 echo ===========================================
 set /p opcao=Escolha uma opcao: 
 
 if "%opcao%"=="0" goto sair
-if "%opcao%"=="1" goto rede 
-if "%opcao%"=="2" goto impressoras
-if "%opcao%"=="3" goto lentidao
-if "%opcao%"=="4" goto updateGp 
+if "%opcao%"=="1" goto lentidao
+if "%opcao%"=="2" goto cleanmgr
+if "%opcao%"=="3" goto audio
+if "%opcao%"=="4" goto rede
 if "%opcao%"=="5" goto windowsupdate
-if "%opcao%"=="6" goto cpu 
-if "%opcao%"=="7" goto ram
-if "%opcao%"=="8" goto cleanmgr
-if "%opcao%"=="9" goto audio
+if "%opcao%"=="6" goto updateGp
+if "%opcao%"=="7" goto cpu
+if "%opcao%"=="8" goto ram
+if "%opcao%"=="9" goto impressoras
+if "%opcao%"=="10" goto repararTeams
+if "%opcao%"=="11" goto repararChrome
 
 echo Opcao invalida.
 pause
 goto menu
 
-:: ==================== REDE ====================
+:: ================= DIAGNOSTICO DE REDE =================
 :rede
 cls
-echo ================== REDE ==================
+echo ============ DIAGNOSTICO DE REDE =============
 echo 0 - Voltar para o menu inicial
 echo 1 - Verificar informacoes completas da rede
 echo 2 - Flush DNS
 echo 3 - Ping Servidor
 echo 4 - Rotas de rede
-echo ===========================================
+echo =============================================
 set /p opcao=Escolha uma opcao: 
 
 if "%opcao%"=="0" goto menu
@@ -75,7 +79,82 @@ route print
 pause
 goto rede
 
-:: ================= IMPRESSORAS ================
+:: ============== FUNCOES DO MENU PRINCIPAL =================
+
+:lentidao
+cls
+echo Etapa 1: Abrindo pastas temporarias...
+start "" "%temp%"
+start "" "%SystemRoot%\SoftwareDistribution\Download"
+start "" "%LocalAppData%\Microsoft\Windows\Explorer"
+start "" "C:\Windows\Prefetch"
+
+echo.
+echo Etapa 2: Executando SFC...
+sfc /scannow
+
+echo.
+echo Etapa 3: Limpando arquivos temporarios...
+del /f /s /q "%temp%\*.*"
+del /f /s /q "%SystemRoot%\SoftwareDistribution\Download\*.*"
+del /f /s /q "%LocalAppData%\Microsoft\Windows\Explorer\*.*"
+del /f /s /q "C:\Windows\Prefetch\*.*"
+
+pause
+goto menu
+
+:cleanmgr
+cleanmgr
+pause
+goto menu
+
+:audio
+cls
+echo ========== RESOLUCAO DE PROBLEMAS DE AUDIO ==========
+echo Reiniciando os principais servicos de audio...
+
+net stop AudioEndpointBuilder >nul 2>&1
+net stop Audiosrv >nul 2>&1
+timeout /t 2 >nul
+net start Audiosrv >nul 2>&1
+net start AudioEndpointBuilder >nul 2>&1
+
+echo.
+echo (Opcional) Reiniciando servico Plug and Play...
+net stop plugplay >nul 2>&1
+timeout /t 2 >nul
+net start plugplay >nul 2>&1
+
+echo.
+echo Verificando dispositivos de audio...
+powershell -Command "Get-PnpDevice -Class Sound" 2>nul
+
+echo.
+echo Resolucao de audio concluida. Teste seu som.
+pause
+goto menu
+
+:windowsupdate
+wuauclt /detectnow
+echo Comando para forcar atualizacoes executado.
+pause
+goto menu
+
+:updateGp 
+gpupdate /force
+pause
+goto menu
+
+:cpu
+wmic path Win32_PerfFormattedData_PerfProc_Process get Name,PercentProcessorTime | sort
+pause
+goto menu
+
+:ram
+wmic process get name,workingsetsize | sort /r /+2
+pause
+goto menu
+
 :impressoras
 cls
 echo =============== IMPRESSORAS ===============
@@ -123,79 +202,43 @@ echo Spooler reiniciado com sucesso.
 pause
 goto impressoras
 
-:: ================ FUNCOES DO MENU PRINCIPAL =================
-
-:lentidao
+:repararTeams
 cls
-echo Etapa 1: Abrindo pastas temporarias...
-start "" "%temp%"
-start "" "%SystemRoot%\SoftwareDistribution\Download"
-start "" "%LocalAppData%\Microsoft\Windows\Explorer"
-start "" "C:\Windows\Prefetch"
+echo Encerrando Microsoft Teams...
+taskkill /f /im Teams.exe >nul 2>&1
 
 echo.
-echo Etapa 2: Executando SFC...
-sfc /scannow
+echo Limpando cache do Teams...
+rmdir /s /q "%AppData%\Microsoft\Teams"
+rmdir /s /q "%LocalAppData%\Microsoft\Teams"
+rmdir /s /q "%LocalAppData%\SquirrelTemp"
+rmdir /s /q "%LocalAppData%\Temp"
 
 echo.
-echo Etapa 3: Limpando arquivos temporarios...
-del /f /s /q "%temp%\*.*"
-del /f /s /q "%SystemRoot%\SoftwareDistribution\Download\*.*"
-del /f /s /q "%LocalAppData%\Microsoft\Windows\Explorer\*.*"
-del /f /s /q "C:\Windows\Prefetch\*.*"
+echo Tentando reiniciar o Teams...
+start "" "%LocalAppData%\Microsoft\Teams\Update.exe" --processStart "Teams.exe"
 
+echo.
+echo Teams reparado e relancado. Aguarde a carga inicial.
 pause
 goto menu
 
-:updateGp 
-gpupdate /force
-pause
-goto menu
-
-:windowsupdate
-wuauclt /detectnow
-echo Comando para forcar atualizacoes executado.
-pause
-goto menu
-
-:cpu
-wmic path Win32_PerfFormattedData_PerfProc_Process get Name,PercentProcessorTime | sort
-pause
-goto menu
-
-:ram
-wmic process get name,workingsetsize | sort /r /+2
-pause
-goto menu
-
-:cleanmgr
-cleanmgr
-pause
-goto menu
-
-:audio
+:repararChrome
 cls
-echo ========== RESOLUCAO DE PROBLEMAS DE AUDIO ==========
-echo Reiniciando os principais servicos de audio...
-
-net stop AudioEndpointBuilder >nul 2>&1
-net stop Audiosrv >nul 2>&1
-timeout /t 2 >nul
-net start Audiosrv >nul 2>&1
-net start AudioEndpointBuilder >nul 2>&1
+echo Encerrando Google Chrome...
+taskkill /f /im chrome.exe >nul 2>&1
 
 echo.
-echo (Opcional) Reiniciando servico Plug and Play...
-net stop plugplay >nul 2>&1
-timeout /t 2 >nul
-net start plugplay >nul 2>&1
+echo Limpando cache do Chrome...
+rmdir /s /q "%LocalAppData%\Google\Chrome\User Data\Default\Cache"
+rmdir /s /q "%LocalAppData%\Google\Chrome\User Data\Default\Code Cache"
 
 echo.
-echo Verificando dispositivos de audio...
-powershell -Command "Get-PnpDevice -Class Sound" 2>nul
+echo Tentando reiniciar o Chrome...
+start chrome
 
 echo.
-echo Resolucao de audio concluida. Teste seu som.
+echo Chrome relancado com sucesso.
 pause
 goto menu
 

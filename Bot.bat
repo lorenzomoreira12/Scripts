@@ -86,13 +86,8 @@ cls
 echo ========== RESOLUCAO DE PROBLEMAS DE AUDIO ==========
 echo Reiniciando servicos principais de audio...
 
-net stop Audiosrv >nul 2>&1
-timeout /t 2 >nul
-net start Audiosrv >nul 2>&1
-
-net stop AudioEndpointBuilder >nul 2>&1
-timeout /t 2 >nul
-net start AudioEndpointBuilder >nul 2>&1
+powershell -Command "Restart-Service -Name 'Audiosrv' -Force"
+powershell -Command "Restart-Service -Name 'AudioEndpointBuilder' -Force"
 
 echo.
 echo Audio reiniciado. Teste o som do sistema.
@@ -100,13 +95,13 @@ pause
 goto menu
 
 :windowsupdate
-wuauclt /detectnow
-echo Comando para forcar atualizacoes executado.
-pause
-goto menu
+cls
+echo Forcando o Windows Update a buscar e instalar atualizacoes...
 
-:updateGp 
-gpupdate /force
+powershell -Command "UsoClient StartScan; UsoClient StartDownload; UsoClient StartInstall"
+
+echo.
+echo Comando de atualizacao enviado. Verifique o Windows Update em alguns minutos.
 pause
 goto menu
 

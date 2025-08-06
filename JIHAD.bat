@@ -1,43 +1,5 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
 title MENU DO SUPORTE TECNICO - Windows 11 (Dominio)
-
-:: =========================================================
-:: Elevacao automatica (necessario para servicos, WU, registro, etc.)
-:: =========================================================
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-  echo Solicitando elevacao (UAC)...
-  powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
-  exit /b
-)
-
-:: =========================================================
-:: Timestamp e LOG
-:: =========================================================
-for /f %%i in ('powershell -NoProfile -Command "(Get-Date).ToString('yyyyMMdd_HHmmss')"') do set "TS=%%i"
-set "LOG=%TEMP%\SD_%TS%.log"
-set "ECHOLOG=1"
-
-call :log ==== Inicio do atendimento %DATE% %TIME% ====
-
-:: =========================================================
-:: Detectar o perfil do usuario atualmente logado na estacao
-:: - Resolve DOMAIN\User -> SID -> ProfileImagePath (C:\Users\xxxxx)
-:: - Prepara variaveis U_PROFILE, U_APPDATA, U_LOCALAPPDATA, U_TEMP
-:: =========================================================
-call :detectUserProfile
-if not defined U_PROFILE (
-  echo [ALERTA] Nao foi possivel identificar o perfil do usuario ativo. Usando %USERPROFILE% como fallback.
-  set "U_PROFILE=%USERPROFILE%"
-  set "U_APPDATA=%U_PROFILE%\AppData\Roaming"
-  set "U_LOCALAPPDATA=%U_PROFILE%\AppData\Local"
-  set "U_TEMP=%U_LOCALAPPDATA%\Temp"
-)
-
-call :log Usuario ativo: %U_UPN%
-call :log SID: %U_SID%
-call :log Perfil: %U_PROFILE%
 
 :: =========================================================
 :: MENU PRINCIPAL
